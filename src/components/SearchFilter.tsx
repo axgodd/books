@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TextField, Button, Grid, CircularProgress, MenuItem } from '@mui/material';
 import axios from 'axios';
-
+import { useNavigate } from 'react-router-dom';
 interface SearchFilterProps {
     onSearchResults: (results: any[], total: number, query: string) => void;
     categories: string[];
@@ -11,7 +11,7 @@ interface SearchFilterProps {
 const SearchFilter: React.FC<SearchFilterProps> = ({ onSearchResults, categories, onFilter }) => {
     const [search, setSearch] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
-
+    const navigate = useNavigate();
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(event.target.value);
     };
@@ -45,11 +45,6 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ onSearchResults, categories
         onFilter(event.target.value);
     };
 
-    const handleResetClick = () => {
-        setSearch('');
-        onFilter('');
-        onSearchResults([], 0, '');
-    };
 
     return (
         <Grid container spacing={2} alignItems="center">
@@ -95,16 +90,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ onSearchResults, categories
                     ))}
                 </TextField>
             </Grid>
-            <Grid item xs={12} sm={2}>
-                <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={handleResetClick}
-                    fullWidth
-                >
-                    Reset
-                </Button>
-            </Grid>
+
         </Grid>
     );
 };
