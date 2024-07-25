@@ -1,84 +1,107 @@
 import React, { useState } from 'react';
-import { TextField, MenuItem, Button, Grid, Autocomplete } from '@mui/material';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+import { TextField, Button, Grid, CircularProgress, MenuItem } from '@mui/material';
+import axios from 'axios';
 
-const SearchFilter: React.FC<{ onSearch: (search: string) => void, onFilter: (category: string) => void, categories: string[] }> = ({ onSearch, onFilter, categories }) => {
-    const [search, setSearch] = useState('');
-    const [category, setCategory] = useState('');
+interface SearchFilterProps {
+    onSearchResults: (results: any[], total: number, query: string) => void;
+    categories: string[];
+    onFilter: (category: string) => void;
+}
 
-    const artworks = useSelector((state: RootState) => state.artworks.artworks);
+const SearchFilter: React.FC<SearchFilterProps> = ({ onSearchResults, categories, onFilter }) => {
+    const [search, setSearch] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
 
-    const handleSearchChange = (event: React.ChangeEvent<{}>, value: string) => {
-        setSearch(value);
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(event.target.value);
+    };
+
+    const handleSearchClick = async (page: number = 1) => {
+        setLoading(true);
+        try {
+            const response = await axios.get(`https://api.artic.edu/api/v1/artworks/search`, {
+                params: {
+                    q: search,
+                    page,
+                    limit: 10,
+                },
+            });
+
+            const searchResults = await Promise.all(response.data.data.map(async (result: any) => {
+                const detailResponse = await axios.get(result.api_link);
+                return detailResponse.data.data;
+            }));
+
+            const total = response.data.pagination.total;
+            onSearchResults(searchResults, total, search);
+        } catch (e) {
+            console.error('Fetch artworks error:', e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCategoryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setCategory(event.target.value);
         onFilter(event.target.value);
-    };
-
-    const handleSearchClick = () => {
-        onSearch(search);
     };
 
     const handleResetClick = () => {
         setSearch('');
-        setCategory('');
-        onSearch('');
         onFilter('');
+        onSearchResults([], 0, '');
     };
 
     return (
         <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={6}>
-                <Autocomplete
-                    freeSolo
-                    options={artworks}
-                    getOptionLabel={(option) => typeof option === 'string' ? option : option.title}
-                    onInputChange={handleSearchChange}
-                    renderOption={(props, option) => {
-                        const { key, ...optionProps } = props;
-                        return (
-                            <li key={typeof option === 'string' ? option : option.id} {...optionProps}>
-                                {typeof option === 'string' ? option : option.title}
-                            </li>
-                        );
-                    }}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Search"
-                            variant="outlined"
-                            fullWidth
-                        />
-                    )}
+                <TextField
+                    label="Search"
+                    variant="outlined"
+                    fullWidth
+                    value={search}
+                    onChange={handleSearchChange}
                 />
             </Grid>
             <Grid item xs={12} sm={2}>
-                <Button variant="contained" color="primary" onClick={handleSearchClick} fullWidth>
-                    Search
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleSearchClick(1)}
+                    fullWidth
+                    disabled={loading}
+                >
+                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Search'}
                 </Button>
             </Grid>
             <Grid item xs={12} sm={2}>
                 <TextField
                     select
                     label="Category"
-                    value={category}
                     onChange={handleCategoryChange}
                     variant="outlined"
                     fullWidth
+                    SelectProps={{
+                        native: true,
+                    }}
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
                 >
-                    <MenuItem value="">All</MenuItem>
+                    <option value="">All</option>
                     {categories.map((category) => (
-                        <MenuItem key={category} value={category}>
+                        <option key={category} value={category}>
                             {category}
-                        </MenuItem>
+                        </option>
                     ))}
                 </TextField>
             </Grid>
             <Grid item xs={12} sm={2}>
-                <Button variant="outlined" color="secondary" onClick={handleResetClick} fullWidth>
+                <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={handleResetClick}
+                    fullWidth
+                >
                     Reset
                 </Button>
             </Grid>

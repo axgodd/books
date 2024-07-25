@@ -1,58 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Typography, Grid, Card, CardContent, Box, AppBar, Toolbar, IconButton, CircularProgress } from '@mui/material';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Container, Typography, Grid, Card, CardContent, Box, AppBar, Toolbar, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import axios from 'axios';
 import CommentForm from '../CommentForm';
 import './ArtworkDetail.css';
-import { Artwork } from '../../store/artworksSlice';
+
+interface Artwork {
+    id: number;
+    title: string;
+    image_id: string;
+    artist_display: string;
+    date_display: string;
+    main_reference_number: string;
+    dimensions: string;
+    category_titles: string[];
+}
 
 const ArtworkDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const [artwork, setArtwork] = useState<Artwork | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<boolean>(false);
     const navigate = useNavigate();
-    const currentPage = useSelector((state: RootState) => state.artworks.currentPage);
+    const location = useLocation();
+    const [artwork, setArtwork] = useState<Artwork | null>(null);
+    const currentPage = location.state?.currentPage || 1;
+    const searchQuery = location.state?.searchQuery || '';
+    const category = location.state?.category || '';
+
 
     useEffect(() => {
-        axios.get(`https://api.artic.edu/api/v1/artworks/${id}`)
-            .then((response) => {
-                if (response.data && response.data.data) {
-                    setArtwork(response.data.data);
-                } else {
-                    setError(true);
-                }
-            })
-            .catch(() => {
-                setError(true);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
+        const fetchArtwork = async () => {
+            try {
+                const response = await axios.get(`https://api.artic.edu/api/v1/artworks/${id}`);
+                setArtwork(response.data.data);
+            } catch (e) {
+                console.error('Fetch artwork error:', e);
+            }
+        };
+
+        fetchArtwork();
     }, [id]);
 
-    useEffect(() => {
-        if (error) {
-            navigate('/');
-        }
-    }, [error]);
-
-    if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress/></Box>;
-    }
-
     if (!artwork) {
-        return null;
+        return <div>Loading...</div>;
     }
 
     return (
         <Container>
             <AppBar position="static" className="header">
                 <Toolbar>
-                    <IconButton edge="start" color="inherit" aria-label="back" onClick={() => navigate(`/?page=${currentPage}`)}>
+                    <IconButton edge="start" color="inherit" aria-label="back" onClick={() => navigate(`/?page=${currentPage}&search=${searchQuery}&category=${category}`)}>
                         <ArrowBackIcon />
                     </IconButton>
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>

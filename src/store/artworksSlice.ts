@@ -68,6 +68,8 @@ const artworksSlice = createSlice({
             if (state.search) {
                 filtered = filtered.filter((artwork) => artwork.title.toLowerCase().includes(state.search.toLowerCase()));
             }
+
+
             if (state.category) {
                 filtered = filtered.filter((artwork) => artwork.category_titles.includes(state.category));
             }

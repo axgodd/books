@@ -1,41 +1,44 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Grid, Card, CardMedia, CardContent, Typography, Tooltip } from '@mui/material';
-import { Artwork } from '../../store/artworksSlice';
-
+import { Card, CardMedia, CardContent, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 interface ArtworkCardProps {
-    artwork: Artwork;
+    artwork: {
+        id: number;
+        title: string;
+        image_id: string;
+        artist_display: string;
+        date_display: string;
+        main_reference_number: string;
+        dimensions: string;
+    };
+    currentPage: number;
+    searchQuery: string;
+    category: string;
 }
 
-const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
+const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, currentPage, searchQuery, category }) => {
+    const navigate = useNavigate();
+
+    const handleCardClick = () => {
+        navigate(`/artwork/${artwork.id}`, { state: { currentPage, searchQuery, category } });
+    };
+
     return (
-        <Grid item key={artwork.id} xs={12} sm={6} md={3}>
-            <Card className="artwork-card">
-                <Link to={`/artwork/${artwork.id}`} style={{ textDecoration: 'none' }}>
-                    <CardMedia
-                        component="img"
-                        alt={artwork.title}
-                        height="200"
-                        image={`https://www.artic.edu/iiif/2/${artwork.image_id}/full/843,/0/default.jpg`}
-                        title={artwork.title}
-                        className="artwork-image"
-                    />
-                    <CardContent>
-                        <Tooltip title={artwork.title} placement="top" arrow>
-                            <Typography
-                                gutterBottom
-                                variant="h6"
-                                component="div"
-                                className="artwork-title"
-                            >
-                                {artwork.title}
-                            </Typography>
-                        </Tooltip>
-                    </CardContent>
-                </Link>
-            </Card>
-        </Grid>
+        <Card onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+            <CardMedia
+                component="img"
+                alt={artwork.title}
+                height="200"
+                image={`https://www.artic.edu/iiif/2/${artwork.image_id}/full/843,/0/default.jpg`}
+                title={artwork.title}
+            />
+            <CardContent>
+                <Typography gutterBottom variant="h6" component="div">
+                    {artwork.title}
+                </Typography>
+            </CardContent>
+        </Card>
     );
 };
 
